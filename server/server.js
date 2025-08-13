@@ -1,9 +1,16 @@
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "./.env") });
+
 import express from "express";
 import cors from "cors";
-import "dotenv/config";
 import connectDB from "./configs/db.js";
 import { inngest, functions } from "./inngest/index.js";
-import { serve } from "inngest/express"; 
+import { serve } from "inngest/express";
 
 const PORT = process.env.PORT;
 const app = express();
