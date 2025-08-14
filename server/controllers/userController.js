@@ -21,14 +21,14 @@ export const getUserData = async (req, res) => {
 export const updateUserData = async (req, res) => {
   try {
     const { userId } = req.auth();
-    const { username, bio, location, full_name } = req.body;
+    let { username, bio, location, full_name } = req.body;
 
     const tempUser = await User.findById(userId);
 
     !username && (username = tempUser.username);
 
     if (tempUser.username !== username) {
-      const user = User.findOne({ username });
+      const user = await User.findOne({ username });
       if (user) {
         // we will not change username if it is already taken
         username = tempUser.username;
@@ -85,7 +85,11 @@ export const updateUserData = async (req, res) => {
       new: true,
     });
 
-    res.json({ success: true, message: "Profile updated successfully" });
+    res.json({
+      success: true,
+      user: user,
+      message: "Profile updated successfully",
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
