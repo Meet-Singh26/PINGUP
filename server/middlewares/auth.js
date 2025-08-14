@@ -5,6 +5,7 @@ export const protect = async (req, res, next) => {
       res.json({ success: false, message: "not authenticated" });
     }
     next();
-  } catch (error) {}
-  res.json({ success: false, message: error.message });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
 };

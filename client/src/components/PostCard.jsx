@@ -68,7 +68,7 @@ function PostCard({ post }) {
               likes.includes(currentUser._id) && "text-red-500 fill-red-500"
             } `}
           />
-          {handleLike}
+          {handleLike()}
           <span>{likes.length}</span>
         </div>
         <div className="flex items-center gap-1">
