@@ -7,7 +7,7 @@ export const inngest = new Inngest({ id: "pingup-app" });
 // Inngest function to save the user data to a database
 const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
-  { event: "clerk/user-created" },
+  { event: "clerk/user.created" },
   async ({ event }) => {
     // Extract user data from Clerk event
     const { id, first_name, last_name, email_addresses, image_url } =
@@ -55,7 +55,7 @@ const syncUserUpdation = inngest.createFunction(
 // Inngest function to delete user from database
 const syncUserDeletion = inngest.createFunction(
   { id: "delete-user-with-clerk" },
-  { event: "clerk/user.delete" },
+  { event: "clerk/user.deleted" },
   async ({ event }) => {
     const { id } = event.data;
 
