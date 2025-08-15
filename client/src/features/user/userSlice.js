@@ -7,12 +7,20 @@ const initialState = {
 };
 
 export const fetchUser = createAsyncThunk("user/fetchUser", async (token) => {
-  const { data } = await api.get("/api/user/data", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return data.success ? data.user : null;
+  try {
+    const { data } = await api.get("/api/user/data", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Ensure the response has the expected structure
+    if (data?.user) {
+      return data.user;
+    }
+    throw new Error("Invalid user data structure");
+  } catch (error) {
+    console.log("Failed to fetch user: ", error);
+    throw error;
+  }
 });
 
 export const updateUser = createAsyncThunk(

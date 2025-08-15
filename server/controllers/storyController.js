@@ -58,7 +58,7 @@ export const getStories = async (req, res) => {
       .populate("user")
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, stories });
+    res.json({ success: true, stories: stories });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });

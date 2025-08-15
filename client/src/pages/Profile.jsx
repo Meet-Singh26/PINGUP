@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Loading from "../components/Loading";
 import UserProfileInfo from "../components/UserProfileInfo";
 import PostCard from "../components/PostCard";
@@ -19,6 +19,7 @@ function Profile() {
   const [posts, setPosts] = useState([]);
   const [activeTab, setActiveTab] = useState("posts");
   const [showEdit, setShowEdit] = useState(false);
+  const navigate = useNavigate();
 
   const fetchUser = async (profileId) => {
     const token = await getToken();
@@ -35,9 +36,11 @@ function Profile() {
         setPosts(data.posts);
       } else {
         toast.error(data.message);
+        navigate("/");
       }
     } catch (error) {
       toast.error(error.message);
+      navigate("/");
     }
   };
 
@@ -68,7 +71,7 @@ function Profile() {
           <UserProfileInfo
             user={user}
             posts={posts}
-            profileId={profileId}
+            isCurrentUser={!profileId || user._id === currentUser._id}
             setShowEdit={setShowEdit}
           />
         </div>

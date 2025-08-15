@@ -3,6 +3,7 @@ import { Pencil } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "../features/user/userSlice.js";
 import { useAuth } from "@clerk/clerk-react";
+import toast from "react-hot-toast";
 
 function ProfileModel({ setShowEdit }) {
   const dispatch = useDispatch();
@@ -10,36 +11,33 @@ function ProfileModel({ setShowEdit }) {
 
   const user = useSelector((state) => state.user.value);
   const [editForm, setEditForm] = useState({
-    username: user.username,
-    bio: user.bio,
-    location: user.location,
+    username: user.username || "",
+    bio: user.bio || "",
+    location: user.location || "",
     profile_picture: null,
-    full_name: user.full_name,
+    full_name: user.full_name || "",
     cover_photo: null,
   });
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
-      const userData = new FormData();
-      const {
-        full_name,
-        username,
-        bio,
-        location,
-        profile_picture,
-        cover_photo,
-      } = editForm;
-
-      userData.append("username", username);
-      userData.append("bio", bio);
-      userData.append("location", location);
-      userData.append("full_name", full_name);
-      profile_picture && userData.append("profile", profile_picture);
-      cover_photo && userData.append("cover", cover_photo);
-
       const token = await getToken();
-      dispatch(updateUser({ userData, token }));
+      const formData = new FormData();
+
+      // Append all form fields to the FormData object
+      formData.append("full_name", editForm.full_name);
+      formData.append("username", editForm.username);
+      formData.append("bio", editForm.bio);
+      formData.append("location", editForm.location);
+      if (editForm.profile_picture) {
+        formData.append("profile", editForm.profile_picture);
+      }
+      if (editForm.cover_photo) {
+        formData.append("cover", editForm.cover_photo);
+      }
+
+      dispatch(updateUser({ userData: formData, token }));
 
       setShowEdit(false);
     } catch (error) {
@@ -58,7 +56,9 @@ function ProfileModel({ setShowEdit }) {
           <form
             className="space-y-4"
             onSubmit={(e) =>
-              toast.promise(handleSaveProfile(e), { loading: "Saving..." })
+              toast.promise(handleSaveProfile(e), {
+                loading: "Saving...",
+              })
             }
           >
             {/* Profile Picture */}

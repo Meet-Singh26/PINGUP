@@ -11,22 +11,31 @@ export const sseController = (req, res) => {
   console.log("New client connected: ", userId);
 
   // Set SSE headers
-  res.setHeader("Content-type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+  });
 
-  // Add the client's response object to the connections object
+  // Send initial connection confirmation
+  res.write(`data: ${JSON.stringify({ type: "connected" })}\n\n`);
+
+  // Store the connection
   connections[userId] = res;
 
-  // Send an initial event to the client
-  res.write("log: Connected to SSE stream\n\n");
+  // Ping client every 30 seconds to keep connection alive
+  const pingInterval = setInterval(() => {
+    if (connections[userId]) {
+      res.write(`data: ${JSON.stringify({ type: "ping" })}\n\n`);
+    }
+  }, 30000);
 
-  // Handle client disconnection
+  // Clean up on client disconnect
   req.on("close", () => {
-    // Remove the client's response object from the connections array
+    clearInterval(pingInterval);
     delete connections[userId];
-    console.log("Client disconnected");
+    console.log("Client disconnected:", userId);
   });
 };
 
@@ -64,21 +73,28 @@ export const sendMessage = async (req, res) => {
       media_url,
     });
 
-    res.json({ success: true, message });
-
-    // Send message to to_user_id using SSE
-    const messageWithUserData = await Message.findById(message._id).populate(
-      "from_user_id"
+    // Populate sender info before sending
+    const populatedMessage = await Message.findById(message._id).populate(
+      "from_user_id",
+      "username full_name profile_picture"
     );
 
+    // Immediate response
+    res.json({ success: true, message: populatedMessage });
+
+    // Prepare broadcast data
+    const broadcastData = JSON.stringify({
+      type: "new_message",
+      message: populatedMessage,
+    });
+
+    // Send to recipient if connected
     if (connections[to_user_id]) {
-      connections[to_user_id].write(
-        `data: ${JSON.stringify(messageWithUserData)}\n\n`
-      );
+      connections[to_user_id].write(`data: ${broadcastData}\n\n`);
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("Message send error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -90,13 +106,16 @@ export const getChatMessages = async (req, res) => {
 
     const messages = await Message.find({
       $or: [
-        { from_user_id: userId },
+        { from_user_id: userId, to_user_id: to_user_id },
         { from_user_id: to_user_id, to_user_id: userId },
       ],
-    }).sort({ created_at: -1 });
+    })
+      .populate("from_user_id")
+      .sort({ created_at: -1 });
+
     // mark messages as seen
     await Message.updateMany(
-      { from_user_id: to_user_id, to_user_id: userId },
+      { from_user_id: to_user_id, to_user_id: userId, seen: false },
       { seen: true }
     );
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useAuth } from "@clerk/clerk-react";
-import api from "../api/axios";
+import api from "../api/axios.js";
 import toast from "react-hot-toast";
 
 function PostCard({ post }) {
@@ -94,8 +94,8 @@ function PostCard({ post }) {
             className={`w-4 h-4 cursor-pointer ${
               likes.includes(currentUser._id) && "text-red-500 fill-red-500"
             } `}
+            onClick={handleLike}
           />
-          {handleLike()}
           <span>{likes.length}</span>
         </div>
         <div className="flex items-center gap-1">

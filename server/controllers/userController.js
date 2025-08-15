@@ -26,25 +26,31 @@ export const updateUserData = async (req, res) => {
     const { userId } = req.auth();
     let { username, bio, location, full_name } = req.body;
 
-    const tempUser = await User.findById(userId);
+    // Validate required fields
+    if (!username || !full_name) {
+      return res.json({
+        success: false,
+        message: "Username and full name are required",
+      });
+    }
 
-    !username && (username = tempUser.username);
-
-    if (tempUser.username !== username) {
-      const user = await User.findOne({ username });
-      if (user) {
-        // we will not change username if it is already taken
-        username = tempUser.username;
-      }
+    // Check for duplicate username
+    const existingUser = await User.findOne({ username });
+    if (existingUser && existingUser._id.toString() !== userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Username already taken",
+      });
     }
 
     const updatedData = {
       username,
-      bio,
-      location,
+      bio: bio || "",
+      location: location || "",
       full_name,
     };
 
+    // Handle file uploads
     const profile = req.files.profile && req.files.profile[0];
     const cover = req.files.cover && req.files.cover[0];
 
@@ -84,18 +90,29 @@ export const updateUserData = async (req, res) => {
       updatedData.cover_photo = url;
     }
 
-    const user = await User.findByIdAndUpdate(userId, updatedData, {
+    const updatedUser = await User.findByIdAndUpdate(userId, updatedData, {
       new: true,
     });
 
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     res.json({
       success: true,
-      user: user,
       message: "Profile updated successfully",
+      user: updatedUser,
     });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("Update error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: "Internal server error",
+    });
   }
 };
 
@@ -243,6 +260,13 @@ export const getUserConnections = async (req, res) => {
     const user = await User.findById(userId).populate(
       "connections followers following"
     );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
     const connections = user.connections;
     const followers = user.followers;
