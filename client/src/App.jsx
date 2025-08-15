@@ -1,26 +1,38 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "./pages/Login";
-import Feed from "./pages/Feed";
-import Messages from "./pages/Messages";
-import ChatBox from "./pages/ChatBox";
-import Connections from "./pages/Connections";
-import Discover from "./pages/Discover";
-import Profile from "./pages/Profile";
-import CreatePost from "./pages/CreatePost";
-import Layout from "./pages/Layout";
+import Login from "./pages/Login.jsx";
+import Feed from "./pages/Feed.jsx";
+import Messages from "./pages/Messages.jsx";
+import ChatBox from "./pages/ChatBox.jsx";
+import Connections from "./pages/Connections.jsx";
+import Discover from "./pages/Discover.jsx";
+import Profile from "./pages/Profile.jsx";
+import CreatePost from "./pages/CreatePost.jsx";
+import Layout from "./pages/Layout.jsx";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { fetchUser } from "./features/user/userSlice.js";
 
 function App() {
   const { user } = useUser();
   const { getToken } = useAuth();
 
+  const dispatch = useDispatch();
+
   useEffect(() => {
-    if (user) {
-      getToken().then((token) => console.log(token));
-    }
-  }, [user]);
+    const fetchData = async () => {
+      if (user) {
+        try {
+          const token = await getToken();
+          await dispatch(fetchUser(token)).unwrap(); // Add .unwrap() to handle rejection
+        } catch (error) {
+          console.error("Failed to fetch user:", error);
+        }
+      }
+    };
+    fetchData();
+  }, [user, getToken, dispatch]);
 
   return (
     <>
