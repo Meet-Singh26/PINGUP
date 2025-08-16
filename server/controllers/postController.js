@@ -11,27 +11,43 @@ export const addPost = async (req, res) => {
 
     let image_urls = [];
 
-    if (images.length) {
-      image_urls = await Promise.all(
-        images.map(async (image) => {
-          const response = await imagekit.upload({
-            file: image.buffer,
-            fileName: image.originalname,
-            folder: "posts",
-          });
+    if (images && images.length) {
+      console.log(`Uploading ${images.length} images...`);
 
-          const url = imagekit.url({
-            path: response.filePath,
-            transformation: [
-              { quality: "auto" },
-              { format: "webp" },
-              { width: "1280" },
-            ],
-          });
+      try {
+        image_urls = await Promise.all(
+          images.map(async (image, index) => {
+            console.log(`Uploading image ${index + 1}/${images.length}`);
 
-          return url;
-        })
-      );
+            const response = await imagekit.upload({
+              file: image.buffer,
+              fileName: `${Date.now()}_${image.originalname}`, // Unique filename
+              folder: "/posts",
+            });
+
+            console.log(`Image ${index + 1} uploaded:`, response.fileId);
+
+            const url = imagekit.url({
+              path: response.filePath,
+              transformation: [
+                { quality: "auto" },
+                { format: "webp" },
+                { width: "1280" },
+              ],
+            });
+
+            return url;
+          })
+        );
+        console.log("All images uploaded successfully");
+      } catch (uploadError) {
+        console.error("ImageKit batch upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Image upload failed",
+          error: uploadError.message,
+        });
+      }
     }
 
     await Post.create({
@@ -43,8 +59,12 @@ export const addPost = async (req, res) => {
 
     res.json({ success: true, message: "Post created successfully" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("Post creation error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: "Internal server error",
+    });
   }
 };
 

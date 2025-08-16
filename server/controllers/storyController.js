@@ -13,13 +13,31 @@ export const addUserStory = async (req, res) => {
 
     // upload media to imagekit
     if (media_type === "image" || media_type === "video") {
-      const response = await imagekit.upload({
-        file: media.buffer,
-        fileName: media.originalname,
-        folder: "stories",
+      console.log("Uploading story media...", {
+        mediaType: media_type,
+        fileName: media?.originalname,
+        fileSize: media?.buffer?.length,
       });
-      media_url = response.url;
+
+      try {
+        const response = await imagekit.upload({
+          file: media.buffer,
+          fileName: `story_${Date.now()}_${media.originalname}`,
+          folder: "/stories",
+        });
+
+        console.log("Story media uploaded:", response.fileId);
+        media_url = response.url;
+      } catch (uploadError) {
+        console.error("ImageKit story upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Media upload failed",
+          error: uploadError.message,
+        });
+      }
     }
+
     // Create Story
     const story = await Story.create({
       user: userId,
@@ -37,8 +55,12 @@ export const addUserStory = async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error("Story creation error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: "Internal server error",
+    });
   }
 };
 

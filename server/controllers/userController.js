@@ -50,41 +50,75 @@ export const updateUserData = async (req, res) => {
     };
 
     // Handle file uploads
-    const profile = req.files.profile && req.files.profile[0];
-    const cover = req.files.cover && req.files.cover[0];
+    const profile = req.files?.profile?.[0];
+    const cover = req.files?.cover?.[0];
 
     if (profile) {
-      const response = await imagekit.upload({
-        file: profile.buffer,
+      console.log("Uploading profile picture...", {
         fileName: profile.originalname,
+        fileSize: profile.buffer?.length,
       });
 
-      const url = imagekit.url({
-        path: response.filePath,
-        transformation: [
-          { quality: "auto" },
-          { format: "webp" },
-          { width: "512" },
-        ],
-      });
-      updatedData.profile_picture = url;
+      try {
+        const response = await imagekit.upload({
+          file: profile.buffer,
+          fileName: `profile_${userId}_${Date.now()}_${profile.originalname}`,
+          folder: "/profiles",
+        });
+
+        console.log("Profile picture uploaded:", response.fileId);
+
+        const url = imagekit.url({
+          path: response.filePath,
+          transformation: [
+            { quality: "auto" },
+            { format: "webp" },
+            { width: "512" },
+          ],
+        });
+        updatedData.profile_picture = url;
+      } catch (uploadError) {
+        console.error("Profile picture upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Profile picture upload failed",
+          error: uploadError.message,
+        });
+      }
     }
 
     if (cover) {
-      const response = await imagekit.upload({
-        file: cover.buffer,
+      console.log("Uploading cover photo...", {
         fileName: cover.originalname,
+        fileSize: cover.buffer?.length,
       });
 
-      const url = imagekit.url({
-        path: response.filePath,
-        transformation: [
-          { quality: "auto" },
-          { format: "webp" },
-          { width: "1280" },
-        ],
-      });
-      updatedData.cover_photo = url;
+      try {
+        const response = await imagekit.upload({
+          file: cover.buffer,
+          fileName: `cover_${userId}_${Date.now()}_${cover.originalname}`,
+          folder: "/covers",
+        });
+
+        console.log("Cover photo uploaded:", response.fileId);
+
+        const url = imagekit.url({
+          path: response.filePath,
+          transformation: [
+            { quality: "auto" },
+            { format: "webp" },
+            { width: "1280" },
+          ],
+        });
+        updatedData.cover_photo = url;
+      } catch (uploadError) {
+        console.error("Cover photo upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Cover photo upload failed",
+          error: uploadError.message,
+        });
+      }
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updatedData, {

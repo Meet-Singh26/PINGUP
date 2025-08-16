@@ -49,18 +49,37 @@ export const sendMessage = async (req, res) => {
     let message_type = image ? "image" : "text";
 
     if (message_type === "image") {
-      const response = await imagekit.upload({
-        file: image.buffer,
-        fileName: image.originalname,
+      console.log("Attempting image upload...", {
+        hasFile: !!image,
+        fileName: image?.originalname,
+        fileSize: image?.buffer?.length,
       });
-      media_url = imagekit.url({
-        path: response.filePath,
-        transformation: [
-          { quality: "auto" },
-          { format: "webp" },
-          { width: "1280" },
-        ],
-      });
+
+      try {
+        const response = await imagekit.upload({
+          file: image.buffer,
+          fileName: image.originalname,
+          folder: "/messages", // Add folder organization
+        });
+
+        console.log("Image upload successful:", response.fileId);
+
+        media_url = imagekit.url({
+          path: response.filePath,
+          transformation: [
+            { quality: "auto" },
+            { format: "webp" },
+            { width: "1280" },
+          ],
+        });
+      } catch (uploadError) {
+        console.error("ImageKit upload error:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Image upload failed",
+          error: uploadError.message,
+        });
+      }
     }
 
     const message = await Message.create({
@@ -92,7 +111,11 @@ export const sendMessage = async (req, res) => {
     }
   } catch (error) {
     console.error("Message send error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      error: "Internal server error",
+    });
   }
 };
 
