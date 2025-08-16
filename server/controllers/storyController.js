@@ -1,4 +1,3 @@
-import fs from "fs";
 import imagekit from "../configs/imageKit.js";
 import Story from "../models/Story.js";
 import User from "../models/User.js";
@@ -14,10 +13,10 @@ export const addUserStory = async (req, res) => {
 
     // upload media to imagekit
     if (media_type === "image" || media_type === "video") {
-      const fileBuffer = fs.readFileSync(media.path);
       const response = await imagekit.upload({
-        file: fileBuffer,
+        file: media.buffer,
         fileName: media.originalname,
+        folder: "stories",
       });
       media_url = response.url;
     }

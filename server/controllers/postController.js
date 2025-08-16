@@ -1,4 +1,3 @@
-import fs from "fs";
 import imagekit from "../configs/imageKit.js";
 import Post from "../models/Post.js";
 import User from "../models/User.js";
@@ -15,9 +14,8 @@ export const addPost = async (req, res) => {
     if (images.length) {
       image_urls = await Promise.all(
         images.map(async (image) => {
-          const fileBuffer = fs.readFileSync(image.path);
           const response = await imagekit.upload({
-            file: fileBuffer,
+            file: image.buffer,
             fileName: image.originalname,
             folder: "posts",
           });

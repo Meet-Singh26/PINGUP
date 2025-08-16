@@ -1,4 +1,3 @@
-import fs from "fs";
 import imagekit from "../configs/imageKit.js";
 import Message from "../models/Message.js";
 
@@ -50,9 +49,8 @@ export const sendMessage = async (req, res) => {
     let message_type = image ? "image" : "text";
 
     if (message_type === "image") {
-      const fileBuffer = fs.readFileSync(image.path);
       const response = await imagekit.upload({
-        file: fileBuffer,
+        file: image.buffer,
         fileName: image.originalname,
       });
       media_url = imagekit.url({
